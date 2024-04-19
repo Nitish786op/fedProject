@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify Song Search</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f2f2f2;
+  }
+
+  #search-container {
+    text-align: center;
+  }
+
+  #search-input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+    margin-bottom: 20px;
+  }
+
+  #search-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #1db954;
+    color: white;
+    cursor: pointer;
+  }
+
+  #search-results {
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .song {
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div id="search-container">
+  <input type="text" id="search-input" placeholder="Search for a song...">
+  <button id="search-button">Search</button>
+  <div id="search-results"></div>
+</div>
+
+<script>
+  document.getElementById('search-button').addEventListener('click', searchSong);
+
+  function searchSong() {
+    const searchTerm = document.getElementById('search-input').value.trim();
+    if (searchTerm === '') {
+      alert('Please enter a search term');
+      return;
+    }
+
+    const clientId = '2f9423d458d647dc95e7f4862973d2b6'; 
+    const clientSecret = 'f9defa573a404313813b6b0896df79d4'; 
+
+    fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+      },
+      body: 'grant_type=client_credentials'
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      const accessToken = data.access_token;
+      searchTracks(searchTerm, accessToken);
+    })
+    .catch(error => {
+      console.error('Error fetching access token:', error);
+    });
+  }
+
+  function searchTracks(searchTerm, accessToken) {
+    fetch(`https://api.spotify.com/v1/search?q=${searchTerm}&type=track`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      displayResults(data);
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
+    });
+  }
+
+  function displayResults(data) {
+    const searchResultsDiv = document.getElementById('search-results');
+    searchResultsDiv.innerHTML = '';
+
+    const tracks = data.tracks.items;
+
+    if (tracks.length === 0) {
+      searchResultsDiv.innerHTML = 'No results found.';
+      return;
+    }
+
+    tracks.forEach(track => {
+      const songDiv = document.createElement('div');
+      songDiv.classList.add('song');
+      songDiv.innerHTML = `
+        <strong>${track.name}</strong> - ${track.artists[0].name} <button onclick="playSong('${track.preview_url}')">Play</button>
+      `;
+      searchResultsDiv.appendChild(songDiv);
+    });
+  }
+
+  function playSong(previewUrl) {
+    const audio = new Audio(previewUrl);
+    audio.play();
+  }
+</script>
+
+</body>
+</html>
