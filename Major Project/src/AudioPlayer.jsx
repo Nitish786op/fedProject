@@ -27,9 +27,24 @@ function AudioPlayer({ src, title, songs }) {
       setCurrentTime(e.target.currentTime);
     });
 
+     const handleKeyDown = (event) => {
+      if (event.key === 'ArrowRight') {
+        const newTime = Math.min(audio.duration, audio.currentTime + 20);
+        setCurrentTime(newTime);
+        audio.currentTime = newTime;
+      } else if (event.key === 'ArrowLeft') {
+        const newTime = Math.max(0, audio.currentTime - 20);
+        setCurrentTime(newTime);
+        audio.currentTime = newTime;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       audio.removeEventListener('loadedmetadata', () => {});
       audio.removeEventListener('timeupdate', () => {});
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [src]); 
 
